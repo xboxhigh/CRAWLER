@@ -1,0 +1,28 @@
+
+*** These modified files were found in JOE when it aborted on Mon Nov 26 16:29:37 2012
+*** JOE was aborted because the terminal closed
+
+*** File '(Unnamed)'
+<base
+<beg>
+Connect
+pageGatheringByCurl
+_file
+fwrite
+1
+fopen
+scp
+scp
+
+*** File '(Unnamed)'
+filter.cpp
+filter.h
+Makefile
+Makefile
+Makefile
+../xboxhigh_crawler/Makefile
+Makefile
+helloWorld.cpp
+helloWorld.cpp
+extrenalSort.cpp
+Makefile

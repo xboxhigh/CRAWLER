@@ -1,0 +1,116 @@
+/*
+	Service Type Name :
+		1.HTTPCRAWL
+		2.HTTPPARSER
+		3.URLFILTER
+		4.URLPOOLMANAGER
+		5.DNSLOOKUP
+		6.STORAGE
+	
+	Socket Message Form :
+		Register message : <Message Type(1.request 2.register 3.response)> <Srevice> <IP>
+		Request message : <Message Type(1.request 2.register 3.response)> <Request Service> <FilePath>
+		Response message : <File Path>
+*/
+#include <curl.h>
+#include <queue>
+#include <dirent.h>		
+#include <string>	
+#include <pthread.h>
+
+#include "globalFunc.h"
+#include "sockFunc.h"
+
+void Initial(SockInfo &Sock)
+{
+	Sock.portNum = 8888;
+	Sock.sendBuff[SendBuffSize] = '\0';
+	Sock.recvBuff[RecvBuffSize] = '\0';
+}
+
+int main(int argc, char **argv)
+{	
+	SockInfo Sock;
+	
+	Initial(Sock);
+	StartService(Sock, "Server");
+	
+	while(true)
+	{
+		//cout << "Start listen..." << endl;
+		
+		Sock.clientfd = 0;
+		char reqMessage[128];
+		
+		/*Indinity loop ( Accepting connettion from client forever, Wait and Accept connection
+			it will be blocked until there are connections from client*/		
+		Sock.clientfd = Accept(Sock);
+		
+		//Sock.sendBuff = "HELLO Client ! ";
+		strcpy(Sock.sendBuff, "Hello Client, recived your request!");
+		
+		SendMessage(Sock, "Server");
+		RecvMessage(Sock, "Server");
+		
+		//cout << "Message : " << Sock.recvBuff << endl;
+		
+		RequestParse(Sock, reqMessage);
+		close(Sock.clientfd);
+		
+		if(reqMessage != NULL)
+		{
+			int count = 0, e = 0;
+			string strCatch[2];
+			
+			while(true)
+			{
+				if(reqMessage[count] == '\0')
+				{
+					e++;
+					if(e > 3)
+						break;
+				}
+				else
+					strCatch[e] = strCatch[e] + reqMessage[count];
+				count++;
+			}		
+			cout << strCatch[0] << "	" << strCatch[1] << endl;
+			
+			SockInfo Sock_2;
+			
+			Sock_2.addr = "120.126.17.110";
+			Sock_2.portNum = 8888;
+			Sock_2.sendBuff[SendBuffSize] = '\0';
+			Sock_2.recvBuff[RecvBuffSize] = '\0';
+			StartService(Sock_2, "Client");
+			
+			cout << Sock_2.sockfd << "\t" << Sock_2.portNum << endl;
+			
+			int index = 0;
+			
+			memcpy(&Sock_2.sendBuff[index], strCatch[1].c_str(), strCatch[1].length());
+			index = index + strCatch[1].length();
+			memcpy(&Sock_2.sendBuff[index], "\0", 1);
+			cout << Sock_2.sendBuff << endl;
+			index++;			
+			
+			cout << "[" <<Sock_2.sendBuff << "]" << endl;
+
+			if( Connect(Sock_2)==0 )
+			{
+				//RecvMessage(Sock_2, "Client");
+				SendMessage(Sock_2, "Client");				
+			}
+			else
+			{
+				cout << "Fail to establish connection." << endl;				
+			}
+			
+			close(Sock_2.sockfd);
+			
+		}
+		
+	}
+	
+	
+}

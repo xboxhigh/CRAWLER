@@ -1,0 +1,232 @@
+/*
+  Program II : For Slave Server
+
+*/
+
+#include <curl.h>
+#include <queue>
+#include <dirent.h>		
+#include <string>	
+
+#include "globalFunc.h"
+
+using namespace std;
+
+/*Self Define Variables*/
+#define MAX_INI_SEED_NUM 10
+
+char *BUFFER_URL = (char*)malloc(sizeof(char) * MIN_BUFFER_SZIE);
+int buffIndex = 0;
+
+string initailURLs[MAX_INI_SEED_NUM] = {
+  "http://www.google.com",
+  "http://www.widelab.org",
+  "http://tw.yahoo.com",
+ 	"http://www.youtube.com",
+ 	"http://tw.msn.com",
+ 	"http://www.pchome.com.tw",
+ 	"http://www.gamer.com.tw",
+ 	"http://www.books.com.tw",
+ 	"http://www.104.com.tw",
+ 	"http://www.flickr.com"
+};
+
+/*Write HTML data into a file.*/
+static size_t write_data(void *ptr, size_t size, size_t nmemb, void *stream)
+{ 
+  int written = fwrite(ptr, size, nmemb, (FILE *)stream);
+  return written;
+}
+
+/*
+string waitingQueueHandler(void)
+{
+	string _extractUrl;
+	
+	return _extractUrl;
+}
+*/
+
+/*
+	output : header.out & body.out
+*/
+void gatheringPageByCurl(string _url, FInfo _file)
+{
+	CURL *curl_handle;
+  
+  curl_global_init(CURL_GLOBAL_ALL);
+ 
+  /* init the curl session */ 
+  curl_handle = curl_easy_init();
+ 
+  /* set URL to get */ 
+  curl_easy_setopt(curl_handle, CURLOPT_URL, _url.c_str());
+ 
+  /* no progress meter please */ 
+  curl_easy_setopt(curl_handle, CURLOPT_NOPROGRESS, 1L);
+ 
+  /* send all data to this function  */ 
+  curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, write_data);
+ 
+
+  /* we want the headers to this file handle */
+  curl_easy_setopt(curl_handle,	CURLOPT_WRITEHEADER, _file.headerFile);
+  /*write the body to this file handle*/
+	curl_easy_setopt(curl_handle,	CURLOPT_WRITEDATA, _file.bodyFile);
+	
+  /*
+   * Notice here that if you want the actual data sent anywhere else but
+   * stdout, you should consider using the CURLOPT_WRITEDATA option.  */ 
+ 
+  /* get it! */ 
+  curl_easy_perform(curl_handle);
+ 
+  /* cleanup curl stuff */ 
+  curl_easy_cleanup(curl_handle);
+}
+
+Offset getFileOffset(FInfo _file, Offset _offset, string _url)
+{
+	char *headerBuff;
+	char *bodyBuff;
+	size_t hResult;
+	size_t bResult;
+	long hfSize;
+	long bfSize;
+
+	if(_offset.beginHeaderOffset == 0)
+	{
+		_offset.endHeaderOffset = ftell(_file.headerFile);
+		_offset.endBodyOffset = ftell(_file.bodyFile);
+		rewind(_file.headerFile);
+		rewind(_file.bodyFile);
+	}
+	else
+	{
+		_offset.beginHeaderOffset = _offset.endHeaderOffset;
+		_offset.endHeaderOffset = ftell(_file.headerFile);
+		_offset.beginBodyOffset = _offset.endBodyOffset;
+		_offset.endBodyOffset = ftell(_file.bodyFile);
+		fseek(_file.headerFile, _offset.beginHeaderOffset , SEEK_SET);
+		fseek(_file.bodyFile, _offset.beginBodyOffset , SEEK_SET);
+	}
+	
+	hfSize = (_offset.endHeaderOffset - _offset.beginHeaderOffset);
+	bfSize = (_offset.endBodyOffset - _offset.beginBodyOffset);
+	
+	/*
+	cout << "=======================Modify==========================" << endl;
+	cout << "		Begin : " << _offset.beginHeaderOffset << "   End : " << _offset.endHeaderOffset<< endl;
+	cout << "		Begin : " << _offset.beginBodyOffset << "   End : " << _offset.endBodyOffset<< endl;
+	cout << "=======================Modify============================" << endl;		
+	*/
+	
+	/*Examing malloc memory right or not*/
+	headerBuff = (char*) malloc (sizeof(char) * hfSize);
+	if(headerBuff == NULL) {fputs ("Memory error (headerBuff)\n", stderr); exit (2);}
+	bodyBuff = (char*) malloc (sizeof(char) * bfSize);
+	if(bodyBuff == NULL) {fputs ("Memory error (bodyBuff)\n", stderr); exit (2);}		
+	
+	/*Make reading file to be sucessing*/
+	hResult = fread(headerBuff, 1, hfSize, _file.headerFile);
+	if(hResult != hfSize) {fputs ("Reading error (hResult)\n", stderr); exit (3);}
+	bResult = fread(bodyBuff, 1, bfSize, _file.bodyFile);
+	if(bResult != bfSize) {fputs ("Reading error (bResult)\n", stderr); exit (3);}
+
+	/*Memory Copy Version : Copy offset to BUFFER_URL*/	
+	memcpy(&BUFFER_URL[buffIndex], _url.c_str(), _url.length());
+	buffIndex = buffIndex + _url.length();
+	memcpy(&BUFFER_URL[buffIndex], "\t", 1);
+	buffIndex = buffIndex + 1;
+	memcpy(&BUFFER_URL[buffIndex], itoa(_offset.beginHeaderOffset).c_str(), itoa(_offset.beginHeaderOffset).length());
+	buffIndex = buffIndex + itoa(_offset.beginHeaderOffset).length();
+	memcpy(&BUFFER_URL[buffIndex], "\t", 1);
+	buffIndex = buffIndex + 1;
+	memcpy(&BUFFER_URL[buffIndex], itoa(_offset.endHeaderOffset).c_str(), itoa(_offset.endHeaderOffset).length());
+	buffIndex = buffIndex + itoa(_offset.endHeaderOffset).length();
+	memcpy(&BUFFER_URL[buffIndex], "\t", 1);
+	buffIndex = buffIndex + 1;
+	memcpy(&BUFFER_URL[buffIndex], itoa(_offset.beginBodyOffset).c_str(), itoa(_offset.beginBodyOffset).length());
+	buffIndex = buffIndex + itoa(_offset.beginBodyOffset).length();
+	memcpy(&BUFFER_URL[buffIndex], "\t", 1);
+	buffIndex = buffIndex + 1;
+	memcpy(&BUFFER_URL[buffIndex], itoa(_offset.endBodyOffset).c_str(), itoa(_offset.endBodyOffset).length());
+	buffIndex = buffIndex + itoa(_offset.endBodyOffset).length();
+	memcpy(&BUFFER_URL[buffIndex], "\n", 1);
+	buffIndex = buffIndex + 1;
+	
+	/*Let Begin Offset point be current End Offset*/
+	_offset.beginHeaderOffset = _offset.endHeaderOffset;
+	_offset.beginBodyOffset = _offset.endBodyOffset;
+	
+	return _offset;
+}
+
+
+/*主程式*/
+int main(void)
+{
+	FInfo FILEVAR;
+	int fileCount[5] = {0, 0, 0, 0, 0};			//To give each file a single number
+	
+	/*Initial File Name*/
+	string headerFileName = "/data1/xboxhigh/_gatheringFiles/hFile/header.out." + itoa(fileCount[0]);
+  string bodyFileName = "/data1/xboxhigh/_gatheringFiles/bFile/body.out." + itoa(fileCount[1]);
+	string oriHBOffsetFileName = "/data1/xboxhigh/_gatheringFiles/oFile/oriHBOffset.out." + itoa(fileCount[2]);
+	string seedsFileName = "/data1/xboxhigh/_gatheringFiles/pFile/urlPools.out." + itoa(fileCount[3]) + ".xml";
+	
+	/*Open Files*/
+	FILEVAR.headerFile = fopen(headerFileName.c_str(), "w+");
+	 	if (FILEVAR.headerFile == NULL) cout << "No Such Path" << endl;
+	FILEVAR.bodyFile = fopen(bodyFileName.c_str(), "w+");
+		if (FILEVAR.bodyFile == NULL) cout << "No Such Path" << endl;
+	FILEVAR.oriHBOffset = fopen(oriHBOffsetFileName.c_str(), "w+");
+		if (FILEVAR.oriHBOffset == NULL) cout << "No Such Path" << endl;
+	FILEVAR.seedsFile = fopen(seedsFileName.c_str(), "r");
+		if (FILEVAR.seedsFile == NULL) cout << "No Such Path" << endl;
+
+	/*Get seeds from files*/
+	char *urlPoolBuff;
+	long urlPoolBuffSize = 0;
+	int urlListCount = 0;
+	string seeds[16 * 1024];
+	
+	urlPoolBuffSize = getFileSize(FILEVAR.seedsFile);
+	urlPoolBuff = (char*)malloc(sizeof(char) * urlPoolBuffSize);
+	urlPoolBuff = getFileContent(FILEVAR.seedsFile);
+	
+	urlListCount = splitStrByDelimiters(seeds, urlPoolBuff, 'P', urlPoolBuffSize);
+	cout << urlPoolBuffSize << endl;
+	cout << urlListCount << endl;
+	
+	/*Initial Offset Value*/
+	Offset OFFSET;
+	OFFSET.beginHeaderOffset = 0;
+	OFFSET.endHeaderOffset = 0;
+	OFFSET.beginBodyOffset = 0;
+	OFFSET.endBodyOffset = 0;
+	
+	queue<string> _urlsQueue;
+	
+	for(int i = 0; i < urlListCount; i++)			//Add assigned urls in urlsQueue
+		_urlsQueue.push(seeds[i]);
+		
+	while(!_urlsQueue.empty())						//Pop url from urlsQueue until it's empty
+	{
+		gatheringPageByCurl(_urlsQueue.front(), FILEVAR);			//Gathering pages' header info and body info
+		//cout << _urlsQueue.front() << endl;
+		OFFSET = getFileOffset(FILEVAR, OFFSET, _urlsQueue.front());
+		_urlsQueue.pop();
+	}
+	
+	/*Write the header & body file offset*/
+	fputs("URL LIST \t HeaderFileOffsetB \t HeaderFileOffsetE \t BodyFileOffsetB \t BodyFileOffsetE \r\n", FILEVAR.oriHBOffset);
+	fputs(BUFFER_URL, FILEVAR.oriHBOffset);		//Generating OffsetFiles
+	
+	/*Close Files*/
+	fclose(FILEVAR.headerFile);
+  fclose(FILEVAR.bodyFile);
+  fclose(FILEVAR.oriHBOffset);
+  
+	return 0;
+}
