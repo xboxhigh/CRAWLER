@@ -17,8 +17,13 @@ int main(int argc, char **argv)	{
 	CRAWLER CRAWL(pHeader, pContent, pMetadata);
 	
 	vector<string> URLList;
+	
+	
 	URLList = vector<string>();
-	URLList = GetURLLists(pURLList);
+	URLList = CRAWL.GetURLLists(pURLList);
+	URLList.push_back("http://www.cplusplus.com/");
+	//URLList.push_back("http://facebook.com");
+	//URLList.push_back("http://google.com");
 	
 	CRAWL.FetchPagesInMultiThread(URLList);
 	
