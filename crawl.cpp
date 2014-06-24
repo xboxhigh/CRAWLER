@@ -18,14 +18,17 @@ int main(int argc, char **argv)	{
 	
 	vector<string> URLList;
 	
-	
+	// Step1. Get URL Seeds
 	URLList = vector<string>();
 	URLList = CRAWL.GetURLLists(pURLList);
 	URLList.push_back("http://www.cplusplus.com/");
-	//URLList.push_back("http://facebook.com");
-	//URLList.push_back("http://google.com");
+	URLList.push_back("http://facebook.com");
+	URLList.push_back("http://google.com");
 	
-	CRAWL.FetchPagesInMultiThread(URLList);
+	// Step2. Start gathering the web pages
+	CRAWL.FetchPagesInSingleThread(URLList);
+	
+	// Step3. Write web pages' header and content information separate.
 	
 	return 0;
 }

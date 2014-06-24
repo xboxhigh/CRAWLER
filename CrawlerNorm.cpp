@@ -49,6 +49,7 @@ void* CRAWLER::PullOneURL(void* _url)	{
   
 	CURL *curl_handle; 
 	char *err;
+	CURLcode res;
 	
 	curl_global_init(CURL_GLOBAL_ALL);
 	// init the curl session // 
@@ -66,8 +67,32 @@ void* CRAWLER::PullOneURL(void* _url)	{
 	
 	curl_easy_setopt(curl_handle, CURLOPT_ERRORBUFFER, &err);
 	
-	curl_easy_perform(curl_handle);
+	res = curl_easy_perform(curl_handle);
+	
+	//	Get the header information which we need
 
+	
+	if(CURLE_OK == res) {
+		res = curl_easy_getinfo(curl_handle, CURLINFO_CONTENT_TYPE, &HeaderInfoColl.CURLINFO_ContentType);
+		if ((CURLE_OK == res) && HeaderInfoColl.CURLINFO_ContentType)
+			cout << HeaderInfoColl.CURLINFO_ContentType << endl;
+		res = curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &HeaderInfoColl.CURLINFO_RepCode);
+		if ((CURLE_OK == res) && HeaderInfoColl.CURLINFO_RepCode)
+			cout << HeaderInfoColl.CURLINFO_RepCode << endl;
+		res = curl_easy_getinfo(curl_handle, CURLINFO_REDIRECT_URL, &HeaderInfoColl.CURLINFO_RedirURL);
+		if ((CURLE_OK == res) && HeaderInfoColl.CURLINFO_RedirURL)
+			cout << HeaderInfoColl.CURLINFO_RedirURL << endl;				
+		res = curl_easy_getinfo(curl_handle, CURLINFO_CONTENT_LENGTH_DOWNLOAD, &HeaderInfoColl.CURLINFO_ContentLen);
+		if ((CURLE_OK == res) && HeaderInfoColl.CURLINFO_ContentLen)
+			cout << HeaderInfoColl.CURLINFO_ContentLen << endl;
+		res = curl_easy_getinfo(curl_handle, CURLINFO_CONTENT_LENGTH_DOWNLOAD, &HeaderInfoColl.CURLINFO_HeaderSIze);
+		if ((CURLE_OK == res) && HeaderInfoColl.CURLINFO_HeaderSIze)
+			cout << HeaderInfoColl.CURLINFO_HeaderSIze << endl;	
+		res = curl_easy_getinfo(curl_handle, CURLINFO_CONTENT_LENGTH_DOWNLOAD, &HeaderInfoColl.CURLINFO_COOKIELIST);
+		if ((CURLE_OK == res) && HeaderInfoColl.CURLINFO_COOKIELIST)
+			cout << HeaderInfoColl.CURLINFO_COOKIELIST << endl;	
+		
+	}
 	//curl_easy_perform(curl_handle); /* ignores error */ 
 	curl_easy_cleanup(curl_handle);
 	
@@ -87,9 +112,23 @@ int CRAWLER::FetchPagesInMultiThread(vector<string> _urlList)	{
 		// Write Raw content in file
 		
 		// Keep important information in metadata file
+	}
+	
+	return 0;
+}
+
+int CRAWLER::FetchPagesInSingleThread(vector<string> _urlList)	{
+	ResetHBuff();
+	ResetCBuff();
+	
+	for (unsigned int index = 0; index < _urlList.size(); index++)	{
 		
-		
-		
+		//cout << _urlList[index] << endl;
+		// Save header information and content information in hBuff, cBuff
+		PullOneURL((void* const)_urlList[index].c_str());
+		// Write Raw content in file
+		//cout << cBuff.length() << endl;
+		// Keep important information in metadata file
 	}
 	
 	return 0;

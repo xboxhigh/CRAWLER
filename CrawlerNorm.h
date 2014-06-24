@@ -13,6 +13,16 @@
 
 using namespace std;
 
+struct HINFO	{
+	long CURLINFO_RepCode;
+	long CURLINFO_HeaderSIze;
+	double CURLINFO_ContentLen;
+	char* CURLINFO_RedirURL;
+	char* CURLINFO_ContentType;
+	struct curl_slist* CURLINFO_COOKIELIST;
+};
+
+
 class CRAWLER	{
 private:
 	void Init(string _hFilePath, string _cFilePath, string _mFilePath);
@@ -26,12 +36,13 @@ private:
 	string cBuff;		//	HTTP content buffer
 	int cBegOffset;
 	int cEndOffset;
+	HINFO HeaderInfoColl;
 public:
 	CRAWLER(string _hFilePath, string _cFilePath, string _mFilePath);
 	~CRAWLER() {}
 	
 	int FetchPagesInMultiThread(vector<string> _urlList);
-	
+	int FetchPagesInSingleThread(vector<string> _urlList);
 	void SetFilePath(string _hp, string _cp, string _mp);
 	vector<string> GetURLLists(string _path);
 	void ResetHBuff()	{	hBuff.clear();}
