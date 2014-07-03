@@ -21,9 +21,10 @@ int main(int argc, char **argv)	{
 	// Step1. Get URL Seeds
 	URLList = vector<string>();
 	URLList = CRAWL.GetURLLists(pURLList);
-	URLList.push_back("http://www.cplusplus.com/");
-	URLList.push_back("http://facebook.com");
-	URLList.push_back("http://google.com");
+	URLList.push_back("http://www.easytravel.com.tw/member/default.aspx?go=");
+	//URLList.push_back("http://www.easytravel.com.tw/member/Login.aspx?go=&login=y");	
+	URLList.push_back("https://www.facebook.com/qiang.min?ref=tn_tnmn");
+	URLList.push_back("http://www2.eyny.com/thread-9565775-1-3DN3CFFH.html");
 	
 	// Step2. Start gathering the web pages
 	CRAWL.FetchPagesInSingleThread(URLList);

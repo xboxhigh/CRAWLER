@@ -8,14 +8,14 @@
 #include <vector>
 #include <pthread.h>
 #include <fstream>
-
+#include <string.h>			//for memset
 #define NUMT 1				//Number of threads
 
 using namespace std;
 
 struct HINFO	{
 	long CURLINFO_RepCode;
-	long CURLINFO_HeaderSIze;
+	long CURLINFO_HeaderSize;
 	double CURLINFO_ContentLen;
 	char* CURLINFO_RedirURL;
 	char* CURLINFO_ContentType;
@@ -26,8 +26,8 @@ struct HINFO	{
 class CRAWLER	{
 private:
 	void Init(string _hFilePath, string _cFilePath, string _mFilePath);
-	void* PullOneURL(void* _url);
-	
+	//void* PullOneURL(void* _url);
+	int PullOneURL(string _url);
 	
 	string hFilePath;
 	string cFilePath;
