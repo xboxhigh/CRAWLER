@@ -28,4 +28,4 @@ client: clientTest.cpp sockFunc.cpp
 server: ControlCenter.cpp sockFunc.cpp
 	g++ ControlCenter.cpp sockFunc.cpp globalFunc.cpp -o server
 cleanbak:
-	rm -rf ./*~	
+	rm -rf ./*~
